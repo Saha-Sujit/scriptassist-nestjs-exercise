@@ -7,6 +7,7 @@ import { TasksModule } from '../../modules/tasks/tasks.module';
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    TasksModule,
     BullModule.registerQueue({
       name: 'task-processing',
     }),
