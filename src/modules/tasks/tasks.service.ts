@@ -121,4 +121,27 @@ export class TasksService {
     task.status = status as any;
     return this.tasksRepository.save(task);
   }
+
+  async getStatistics(): Promise<any> {
+    // Optimized: Uses SQL aggregation instead of in-memory filtering
+    const qb = this.tasksRepository.createQueryBuilder('task');
+
+    const result = await qb
+      .select([
+        'COUNT(*) as total',
+        `SUM(CASE WHEN task.status = 'COMPLETED' THEN 1 ELSE 0 END) as completed`,
+        `SUM(CASE WHEN task.status = 'IN_PROGRESS' THEN 1 ELSE 0 END) as inProgress`,
+        `SUM(CASE WHEN task.status = 'PENDING' THEN 1 ELSE 0 END) as pending`,
+        `SUM(CASE WHEN task.priority = 'HIGH' THEN 1 ELSE 0 END) as highPriority`,
+      ])
+      .getRawOne();
+
+    return {
+      total: Number(result.total),
+      completed: Number(result.completed),
+      inProgress: Number(result.inProgress),
+      pending: Number(result.pending),
+      highPriority: Number(result.highPriority),
+    };
+  }
 }
