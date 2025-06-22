@@ -12,10 +12,8 @@ import { RateLimitGuard } from '../../common/guards/rate-limit.guard';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 
-// This guard needs to be implemented or imported from the correct location
-// We're intentionally leaving it as a non-working placeholder
-// class JwtAuthGuard {}
 // Added AuthModule for JwtAuthGuard and RateLimitGuard for request throttling
+// class JwtAuthGuard {}
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -25,9 +23,9 @@ import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 export class TasksController {
   constructor(
     private readonly tasksService: TasksService,
-    // Anti-pattern: Controller directly accessing repository
-    @InjectRepository(Task)
-    private taskRepository: Repository<Task>
+    // Anti-pattern: should be removed or commented out
+    // @InjectRepository(Task)
+    // private taskRepository: Repository<Task>
   ) {}
 
   @Post()
@@ -83,7 +81,8 @@ export class TasksController {
   @ApiOperation({ summary: 'Get task statistics' })
   async getStats() {
     // Inefficient approach: N+1 query problem
-    const tasks = await this.taskRepository.find();
+    // const tasks = await this.taskRepository.find();
+    const tasks = await this.tasksService.findAll();
     
     // Inefficient computation: Should be done with SQL aggregation
     const statistics = {
