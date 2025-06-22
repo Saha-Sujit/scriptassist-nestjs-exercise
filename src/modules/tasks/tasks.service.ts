@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -19,6 +19,7 @@ export class TasksService {
     private tasksRepository: Repository<Task>,
     @InjectQueue('task-processing')
     private taskQueue: Queue,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createTaskDto: CreateTaskDto): Promise<Task> {
@@ -78,31 +79,40 @@ export class TasksService {
   }
 
   async update(id: string, updateTaskDto: UpdateTaskDto): Promise<Task> {
-    // Inefficient implementation: multiple database calls
-    // and no transaction handling
-    const task = await this.findOne(id);
-
-    const originalStatus = task.status;
-
-    // Directly update each field individually
-    if (updateTaskDto.title) task.title = updateTaskDto.title;
-    if (updateTaskDto.description) task.description = updateTaskDto.description;
-    if (updateTaskDto.status) task.status = updateTaskDto.status;
-    if (updateTaskDto.priority) task.priority = updateTaskDto.priority;
-    if (updateTaskDto.dueDate) task.dueDate = updateTaskDto.dueDate;
-
-    const updatedTask = await this.tasksRepository.save(task);
-
-    // Add to queue if status changed, but without proper error handling
-    if (originalStatus !== updatedTask.status) {
-      this.taskQueue.add('task-status-update', {
-        taskId: updatedTask.id,
-        status: updatedTask.status,
+    return await this.dataSource.transaction(async (manager) => {
+      const task = await manager.findOne(Task, {
+        where: { id },
+        relations: ['user'],
       });
-    }
 
-    return updatedTask;
+      if (!task) {
+        throw new NotFoundException(`Task with ID ${id} not found`);
+      }
+
+      const originalStatus = task.status;
+
+      // Clean update: map only allowed fields
+      Object.assign(task, updateTaskDto);
+
+      const updatedTask = await manager.save(task);
+
+      // Handle status change queue safely
+      if (originalStatus !== updatedTask.status) {
+        try {
+          await this.taskQueue.add('task-status-update', {
+            taskId: updatedTask.id,
+            status: updatedTask.status,
+          });
+        } catch (err) {
+          // You can log or handle the error based on importance
+          console.error('Failed to enqueue task status update:', err);
+        }
+      }
+
+      return updatedTask;
+    });
   }
+
 
   async remove(id: string): Promise<void> {
     // Inefficient implementation: two separate database calls
