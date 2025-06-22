@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, HttpException, HttpStatus, UseInterceptors, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, HttpException, HttpStatus, UseInterceptors, NotFoundException, HttpCode } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -79,9 +79,8 @@ export class TasksController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a task' })
+  @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string) {
-    // No validation if task exists before removal
-    // No status code returned for success
     return this.tasksService.remove(id);
   }
 

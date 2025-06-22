@@ -113,11 +113,17 @@ export class TasksService {
     });
   }
 
+  // Optimized: uses a single delete operation instead of fetching first
+  // Validates existence via affected row check to avoid silent failures
+  // Returns a user-friendly success message instead of a raw boolean
+  async remove(id: string): Promise<{ message: string }> {
+    const result = await this.tasksRepository.delete(id);
 
-  async remove(id: string): Promise<void> {
-    // Inefficient implementation: two separate database calls
-    const task = await this.findOne(id);
-    await this.tasksRepository.remove(task);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+      return { message: 'Task deleted successfully' };
   }
 
   async findByStatus(status: TaskStatus): Promise<Task[]> {
