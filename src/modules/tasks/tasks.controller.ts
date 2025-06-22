@@ -7,8 +7,8 @@ import { TaskStatus } from './enums/task-status.enum';
 import { RateLimitGuard } from '../../common/guards/rate-limit.guard';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
-import { QueryTasksDto } from './dto/query-tasks.dto';
 import { PaginatedTasksDto } from './dto/paginated-tasks.dto';
+import { TaskFilterDto } from './dto/task-filter.dto';
 
 // Added AuthModule for JwtAuthGuard and RateLimitGuard for request throttling
 // class JwtAuthGuard {}
@@ -34,7 +34,7 @@ export class TasksController {
 
   @Get()
   @ApiOperation({ summary: 'Find all tasks with optional filtering' })
-  async findAll(@Query() query: QueryTasksDto): Promise<PaginatedTasksDto> {
+  async findAll(@Query() query: TaskFilterDto): Promise<PaginatedTasksDto> {
     // Clean: Filtering and pagination handled by service/database
     return await this.tasksService.findAll(query);
   }

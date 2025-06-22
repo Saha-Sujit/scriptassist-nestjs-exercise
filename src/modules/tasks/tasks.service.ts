@@ -7,10 +7,9 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { TaskStatus } from './enums/task-status.enum';
-import { TaskPriority } from './enums/task-priority.enum';
 import { TaskStatisticsDto } from './dto/task-statistics.dto';
-import { QueryTasksDto } from './dto/query-tasks.dto';
 import { PaginatedTasksDto } from './dto/paginated-tasks.dto';
+import { TaskFilterDto } from './dto/task-filter.dto';
 
 @Injectable()
 export class TasksService {
@@ -45,18 +44,33 @@ export class TasksService {
   }
 
 
-  async findAll(query: QueryTasksDto): Promise<PaginatedTasksDto> {
-    // Efficient: Supports pagination and filtering, avoids loading unnecessary relations
-    const { status, priority, page = 1, limit = 10 } = query;
+  async findAll(query: TaskFilterDto): Promise<PaginatedTasksDto> {
+    const { status, priority, page = 1, limit = 10, userId, search, dueFrom, dueTo, createdFrom, createdTo, updatedFrom, updatedTo } = query;
 
     const qb = this.tasksRepository.createQueryBuilder('tasks');
 
-    if (status) {
-      qb.andWhere('tasks.status = :status', { status });
+    const filters = [
+      { value: status, condition: 'tasks.status = :status', param: 'status' },
+      { value: priority, condition: 'tasks.priority = :priority', param: 'priority' },
+      { value: userId, condition: 'tasks.userId = :userId', param: 'userId' },
+      { value: dueFrom, condition: 'tasks.dueDate >= :dueFrom', param: 'dueFrom' },
+      { value: dueTo, condition: 'tasks.dueDate <= :dueTo', param: 'dueTo' },
+      { value: createdFrom, condition: 'tasks.createdAt >= :createdFrom', param: 'createdFrom' },
+      { value: createdTo, condition: 'tasks.createdAt <= :createdTo', param: 'createdTo' },
+      { value: updatedFrom, condition: 'tasks.updatedAt >= :updatedFrom', param: 'updatedFrom' },
+      { value: updatedTo, condition: 'tasks.updatedAt <= :updatedTo', param: 'updatedTo' },
+    ];
+
+    for (const { value, condition, param } of filters) {
+      if (value !== undefined) {
+        qb.andWhere(condition, { [param]: value });
+      }
     }
 
-    if (priority) {
-      qb.andWhere('tasks.priority = :priority', { priority });
+    if (search) {
+      qb.andWhere('(tasks.title ILIKE :search OR tasks.description ILIKE :search)', {
+        search: `%${search}%`,
+      });
     }
 
     qb.skip((page - 1) * limit).take(limit);
@@ -69,6 +83,7 @@ export class TasksService {
       total,
     };
   }
+
 
 
 
