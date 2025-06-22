@@ -10,10 +10,12 @@ import { TaskStatus } from './enums/task-status.enum';
 import { TaskPriority } from './enums/task-priority.enum';
 import { RateLimitGuard } from '../../common/guards/rate-limit.guard';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
+import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 
 // This guard needs to be implemented or imported from the correct location
 // We're intentionally leaving it as a non-working placeholder
-class JwtAuthGuard {}
+// class JwtAuthGuard {}
+// Added AuthModule for JwtAuthGuard and RateLimitGuard for request throttling
 
 @ApiTags('tasks')
 @Controller('tasks')
