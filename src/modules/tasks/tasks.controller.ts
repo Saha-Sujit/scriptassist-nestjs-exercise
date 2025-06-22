@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, HttpException, HttpStatus, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, HttpException, HttpStatus, UseInterceptors, NotFoundException } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -55,12 +55,12 @@ export class TasksController {
   @ApiOperation({ summary: 'Find a task by ID' })
   async findOne(@Param('id') id: string) {
     const task = await this.tasksService.findOne(id);
-    
+
     if (!task) {
-      // Inefficient error handling: Revealing internal details
-      throw new HttpException(`Task with ID ${id} not found in the database`, HttpStatus.NOT_FOUND);
+      // Improved error handling: Generic message using NotFoundException
+      throw new NotFoundException('Task not found');
     }
-    
+
     return task;
   }
 

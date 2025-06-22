@@ -37,43 +37,44 @@ export class TasksService {
   }
 
   async findAll(query: QueryTasksDto): Promise<PaginatedTasksDto> {
-  const { status, priority, page = 1, limit = 10 } = query;
+    // Efficient: Supports pagination and filtering, avoids loading unnecessary relations
+    const { status, priority, page = 1, limit = 10 } = query;
 
-  const qb = this.tasksRepository.createQueryBuilder('tasks');
+    const qb = this.tasksRepository.createQueryBuilder('tasks');
 
-  if (status) {
-    qb.andWhere('tasks.status = :status', { status });
+    if (status) {
+      qb.andWhere('tasks.status = :status', { status });
+    }
+
+    if (priority) {
+      qb.andWhere('tasks.priority = :priority', { priority });
+    }
+
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data,
+      count: data.length,
+      total,
+    };
   }
-
-  if (priority) {
-    qb.andWhere('tasks.priority = :priority', { priority });
-  }
-
-  qb.skip((page - 1) * limit).take(limit);
-
-  const [data, total] = await qb.getManyAndCount();
-
-  return {
-    data,
-    count: data.length,
-    total,
-  };
-}
 
 
 
   async findOne(id: string): Promise<Task> {
-    // Inefficient implementation: two separate database calls
-    const count = await this.tasksRepository.count({ where: { id } });
+    // Optimized: Single DB call for fetch and check
+    const task = await this.tasksRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
 
-    if (count === 0) {
+    if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
-    return (await this.tasksRepository.findOne({
-      where: { id },
-      relations: ['user'],
-    })) as Task;
+    return task;
   }
 
   async update(id: string, updateTaskDto: UpdateTaskDto): Promise<Task> {
