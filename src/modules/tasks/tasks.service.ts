@@ -23,19 +23,27 @@ export class TasksService {
   ) {}
 
   async create(createTaskDto: CreateTaskDto): Promise<Task> {
-    // Inefficient implementation: creates the task but doesn't use a single transaction
-    // for creating and adding to queue, potential for inconsistent state
-    const task = this.tasksRepository.create(createTaskDto);
-    const savedTask = await this.tasksRepository.save(task);
+    let savedTask!: Task;
 
-    // Add to queue without waiting for confirmation or handling errors
-    this.taskQueue.add('task-status-update', {
-      taskId: savedTask.id,
-      status: savedTask.status,
+    await this.dataSource.transaction(async (manager) => {
+      const task = manager.create(Task, createTaskDto);
+      savedTask = await manager.save(task);
     });
+
+    // Queueing outside transaction to avoid blocking DB commit
+    try {
+      await this.taskQueue.add('task-status-update', {
+        taskId: savedTask.id,
+        status: savedTask.status,
+      });
+    } catch (err) {
+      // Optional: handle or log queue error
+      console.error('Failed to queue task status update:', err);
+    }
 
     return savedTask;
   }
+
 
   async findAll(query: QueryTasksDto): Promise<PaginatedTasksDto> {
     // Efficient: Supports pagination and filtering, avoids loading unnecessary relations
