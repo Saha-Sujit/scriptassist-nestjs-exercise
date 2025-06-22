@@ -135,16 +135,18 @@ export class TasksService {
   }
 
   async findByStatus(status: TaskStatus): Promise<Task[]> {
-    // Inefficient implementation: doesn't use proper repository patterns
-    const query = 'SELECT * FROM tasks WHERE status = $1';
-    return this.tasksRepository.query(query, [status]);
+  // Optimized: Uses QueryBuilder for better readability and security
+  return this.tasksRepository
+    .createQueryBuilder('task')
+    .where('task.status = :status', { status })
+    .getMany();
   }
 
-  async updateStatus(id: string, status: string): Promise<Task> {
-    // This method will be called by the task processor
+  async updateStatus(id: string, status: TaskStatus): Promise<Task> {
+    // Optimized: Uses enum type and validates task existence before update
     const task = await this.findOne(id);
-    task.status = status as any;
-    return this.tasksRepository.save(task);
+    task.status = status;
+    return await this.tasksRepository.save(task);
   }
 
   async getStatistics(): Promise<TaskStatisticsDto> {
