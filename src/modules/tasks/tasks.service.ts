@@ -7,6 +7,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { TaskStatus } from './enums/task-status.enum';
+import { TaskPriority } from './enums/task-priority.enum';
 
 @Injectable()
 export class TasksService {
@@ -32,13 +33,34 @@ export class TasksService {
     return savedTask;
   }
 
-  async findAll(): Promise<Task[]> {
-    // Inefficient implementation: retrieves all tasks without pagination
-    // and loads all relations, causing potential performance issues
-    return this.tasksRepository.find({
-      relations: ['user'],
-    });
+  async findAll(
+  status?: TaskStatus,
+  priority?: TaskPriority,
+  page = 1,
+  limit = 10,
+  ): Promise<{ data: Task[]; count: number; total: number }> {
+    // Efficient: Supports pagination and filtering, avoids loading unnecessary relations
+    const query = this.tasksRepository.createQueryBuilder('tasks');
+
+    if (status) {
+      query.andWhere('tasks.status = :status', { status });
+    }
+
+    if (priority) {
+      query.andWhere('tasks.priority = :priority', { priority });
+    }
+
+    query.skip((page - 1) * limit).take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+
+    return {
+      data,
+      count: data.length,
+      total,
+    };
   }
+
 
   async findOne(id: string): Promise<Task> {
     // Inefficient implementation: two separate database calls
