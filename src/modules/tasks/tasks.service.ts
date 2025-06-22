@@ -8,6 +8,9 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { TaskStatus } from './enums/task-status.enum';
 import { TaskPriority } from './enums/task-priority.enum';
+import { TaskStatisticsDto } from './dto/task-statistics.dto';
+import { QueryTasksDto } from './dto/query-tasks.dto';
+import { PaginatedTasksDto } from './dto/paginated-tasks.dto';
 
 @Injectable()
 export class TasksService {
@@ -33,33 +36,30 @@ export class TasksService {
     return savedTask;
   }
 
-  async findAll(
-  status?: TaskStatus,
-  priority?: TaskPriority,
-  page = 1,
-  limit = 10,
-  ): Promise<{ data: Task[]; count: number; total: number }> {
-    // Efficient: Supports pagination and filtering, avoids loading unnecessary relations
-    const query = this.tasksRepository.createQueryBuilder('tasks');
+  async findAll(query: QueryTasksDto): Promise<PaginatedTasksDto> {
+  const { status, priority, page = 1, limit = 10 } = query;
 
-    if (status) {
-      query.andWhere('tasks.status = :status', { status });
-    }
+  const qb = this.tasksRepository.createQueryBuilder('tasks');
 
-    if (priority) {
-      query.andWhere('tasks.priority = :priority', { priority });
-    }
-
-    query.skip((page - 1) * limit).take(limit);
-
-    const [data, total] = await query.getManyAndCount();
-
-    return {
-      data,
-      count: data.length,
-      total,
-    };
+  if (status) {
+    qb.andWhere('tasks.status = :status', { status });
   }
+
+  if (priority) {
+    qb.andWhere('tasks.priority = :priority', { priority });
+  }
+
+  qb.skip((page - 1) * limit).take(limit);
+
+  const [data, total] = await qb.getManyAndCount();
+
+  return {
+    data,
+    count: data.length,
+    total,
+  };
+}
+
 
 
   async findOne(id: string): Promise<Task> {
@@ -122,7 +122,7 @@ export class TasksService {
     return this.tasksRepository.save(task);
   }
 
-  async getStatistics(): Promise<any> {
+  async getStatistics(): Promise<TaskStatisticsDto> {
     // Optimized: Uses SQL aggregation instead of in-memory filtering
     const qb = this.tasksRepository.createQueryBuilder('task');
 
