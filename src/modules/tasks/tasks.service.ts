@@ -84,9 +84,6 @@ export class TasksService {
     };
   }
 
-
-
-
   async findOne(id: string): Promise<Task> {
     // Optimized: Single DB call for fetch and check
     const task = await this.tasksRepository.findOne({
@@ -159,9 +156,17 @@ export class TasksService {
 
   async updateStatus(id: string, status: TaskStatus): Promise<Task> {
     // Optimized: Uses enum type and validates task existence before update
-    const task = await this.findOne(id);
-    task.status = status;
-    return await this.tasksRepository.save(task);
+    return await this.dataSource.transaction(async (manager) => {
+      const task = await manager.findOne(Task, { where: { id } });
+
+      if (!task) {
+        throw new NotFoundException(`Task with ID ${id} not found`);
+      }
+
+      task.status = status;
+
+      return await manager.save(Task, task);
+    });
   }
 
   async getStatistics(): Promise<TaskStatisticsDto> {

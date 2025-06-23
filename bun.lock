@@ -20,6 +20,7 @@
         "class-transformer": "0.5.1",
         "class-validator": "0.14.1",
         "dotenv": "16.4.7",
+        "lodash": "4.17.21",
         "passport": "0.7.0",
         "passport-jwt": "4.0.1",
         "pg": "8.14.1",
@@ -35,6 +36,7 @@
         "@types/bcrypt": "5.0.2",
         "@types/express": "4.17.21",
         "@types/jest": "29.5.14",
+        "@types/lodash": "4.17.18",
         "@types/node": "20.17.24",
         "@types/passport-jwt": "4.0.1",
         "@types/supertest": "2.0.16",
@@ -319,6 +321,8 @@
     "@types/json-schema": ["@types/json-schema@7.0.15", "", {}, "sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA=="],
 
     "@types/jsonwebtoken": ["@types/jsonwebtoken@9.0.9", "", { "dependencies": { "@types/ms": "*", "@types/node": "*" } }, "sha512-uoe+GxEuHbvy12OUQct2X9JenKM3qAscquYymuQN4fMWG9DBQtykrQEFcAbVACF7qaLw9BePSodUL0kquqBJpQ=="],
+
+    "@types/lodash": ["@types/lodash@4.17.18", "", {}, "sha512-KJ65INaxqxmU6EoCiJmRPZC9H9RVWCRd349tXM2M3O5NA7cY6YL7c0bHAHQ93NOfTObEQ004kd2QVHs/r0+m4g=="],
 
     "@types/luxon": ["@types/luxon@3.4.2", "", {}, "sha512-TifLZlFudklWlMBfhubvgqTXRzLDI5pCbGa4P8a3wPyUQSW+1xQ5eDsreP9DWHX3tjq1ke96uYG/nwundroWcA=="],
 
