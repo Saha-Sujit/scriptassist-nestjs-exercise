@@ -4,6 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-ioredis';
+
 import { UsersModule } from './modules/users/users.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -13,12 +16,22 @@ import { CacheService } from './common/services/cache.service';
 
 @Module({
   imports: [
-    // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    
-    // Database
+
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        store: redisStore,
+        host: configService.get('REDIS_HOST'),
+        port: configService.get('REDIS_PORT'),
+        ttl: 300,
+      }),
+    }),
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -34,11 +47,9 @@ import { CacheService } from './common/services/cache.service';
         logging: configService.get('NODE_ENV') === 'development',
       }),
     }),
-    
-    // Scheduling
+
     ScheduleModule.forRoot(),
-    
-    // Queue
+
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -49,37 +60,25 @@ import { CacheService } from './common/services/cache.service';
         },
       }),
     }),
-    
-    // Rate limiting
+
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ([
+      useFactory: () => [
         {
           ttl: 60,
           limit: 10,
         },
-      ]),
+      ],
     }),
-    
-    // Feature modules
+
     UsersModule,
     TasksModule,
     AuthModule,
-    
-    // Queue processing modules
     TaskProcessorModule,
     ScheduledTasksModule,
   ],
-  providers: [
-    // Inefficient: Global cache service with no configuration options
-    // This creates a single in-memory cache instance shared across all modules
-    CacheService
-  ],
-  exports: [
-    // Exporting the cache service makes it available to other modules
-    // but creates tight coupling
-    CacheService
-  ]
+  providers: [CacheService],
+  exports: [CacheService],
 })
-export class AppModule {} 
+export class AppModule {}

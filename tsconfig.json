@@ -27,6 +27,7 @@
       "@database/*": ["src/database/*"],
       "@queues/*": ["src/queues/*"],
       "@types/*": ["src/types/*"]
-    }
+    },
+    "typeRoots": ["./node_modules/@types", "./types"]
   }
-} 
+}
