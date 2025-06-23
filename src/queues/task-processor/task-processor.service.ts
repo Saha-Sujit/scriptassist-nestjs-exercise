@@ -41,11 +41,6 @@ export class TaskProcessorService extends WorkerHost {
     });
   }
 
-  // Inefficient implementation:
-  // - No proper job batching
-  // - No error handling strategy
-  // - No retries for failed jobs
-  // - No concurrency control
   async process(job: Job): Promise<any> {
     this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
     

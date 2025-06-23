@@ -24,12 +24,6 @@ export class OverdueTasksService {
   async checkOverdueTasks() {
     this.logger.debug('Checking for overdue tasks...');
     
-    // TODO: Implement overdue tasks checking logic
-    // 1. Find all tasks that are overdue (due date is in the past)
-    // 2. Add them to the task processing queue
-    // 3. Log the number of overdue tasks found
-    
-    // Example implementation (incomplete - to be implemented by candidates)
     const now = new Date();
     const overdueTasks = await this.tasksRepository.find({
       where: {
@@ -40,8 +34,6 @@ export class OverdueTasksService {
     
     this.logger.log(`Found ${overdueTasks.length} overdue tasks`);
     
-    // Add tasks to the queue to be processed
-    // TODO: Implement adding tasks to the queue
     for (const task of overdueTasks) {
       try {
         await this.taskQueue.add('process-overdue-task', {
