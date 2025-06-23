@@ -1,36 +1,70 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Logger } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  Logger,
+  HttpStatus,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 
-@Catch(HttpException)
+@Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
-  catch(exception: HttpException, host: ArgumentsHost) {
+  catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const status = exception.getStatus();
-    const exceptionResponse = exception.getResponse();
 
-    // TODO: Implement comprehensive error handling
-    // This filter should:
-    // 1. Log errors appropriately based on their severity
-    // 2. Format error responses in a consistent way
-    // 3. Include relevant error details without exposing sensitive information
-    // 4. Handle different types of errors with appropriate status codes
+    let status: number;
+    let message: string | string[];
+    let errorResponse: any;
 
-    this.logger.error(
-      `HTTP Exception: ${exception.message}`,
-      exception.stack,
-    );
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      errorResponse = exception.getResponse();
 
-    // Basic implementation (to be enhanced by candidates)
+      if (typeof errorResponse === 'string') {
+        message = errorResponse;
+      } else if (
+        typeof errorResponse === 'object' &&
+        errorResponse !== null &&
+        'message' in errorResponse
+      ) {
+        message = (errorResponse as any).message;
+      } else {
+        message = exception.message;
+      }
+
+      // Logging client or server errors differently
+      if (status >= 500) {
+        this.logger.error(
+          `[${request.method}] ${request.url} ${status} - ${JSON.stringify(message)} | IP: ${request.ip}`,
+          exception.stack,
+        );
+      } else {
+        this.logger.warn(
+          `[${request.method}] ${request.url} ${status} - ${JSON.stringify(message)} | IP: ${request.ip}`,
+        );
+      }
+    } else {
+      // Handling unexpected errors
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      message = 'Internal server error';
+      this.logger.error(
+        `[${request.method}] ${request.url} ${status} - Unexpected error | IP: ${request.ip}`,
+        (exception as any)?.stack || '',
+      );
+    }
+
     response.status(status).json({
       success: false,
       statusCode: status,
-      message: exception.message,
+      message,
       path: request.url,
+      method: request.method,
       timestamp: new Date().toISOString(),
     });
   }
-} 
+}
