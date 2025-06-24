@@ -1,0 +1,15 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.ts$": "ts-jest"
+  },
+  "setupFiles": ["../test/jest-setup.ts"],
+  "testEnvironment": "node",
+  "moduleNameMapper": {
+    "^@common/(.*)$": "../../src/common/$1",
+    "^@modules/(.*)$": "../../src/modules/$1",
+    "^@types/(.*)$": "../../src/types/$1"
+  }
+}
